@@ -1,0 +1,35 @@
+{
+  "name": "kainos-mobile",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@expo-google-fonts/outfit": "^0.4.3",
+    "@expo/vector-icons": "^15.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@supabase/supabase-js": "^2.119.0",
+    "expo": "~58.0.22",
+    "expo-camera": "~58.0.14",
+    "expo-font": "~58.0.11",
+    "expo-status-bar": "~58.0.4",
+    "expo-updates": "~58.0.21",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-qrcode-svg": "^6.3.54",
+    "react-native-svg": "15.16.0",
+    "react-native-url-polyfill": "^4.0.0",
+    "react-native-web": "^0.21.4"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "expo lint"
+  },
+  "private": true,
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~58.0.4"
+  }
+}
