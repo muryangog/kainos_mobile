@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { C, F } from '../config';
 import { Card, Title } from '../ui';
 import { Result } from './ScanScreen';
+import PassModal from '../components/PassModal';
 
 const norm = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const digits = (v) => String(v || '').replace(/\D/g, '');
@@ -13,6 +14,7 @@ export default function SearchScreen({ rows, onScan }) {
   const [q, setQ] = useState('');
   const [res, setRes] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const [selectedPass, setSelectedPass] = useState(null);
 
   const list = useMemo(() => {
     const text = norm(q.trim());
@@ -43,12 +45,12 @@ export default function SearchScreen({ rows, onScan }) {
         data={list}
         keyExtractor={(r) => r.id}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: 18, paddingTop: 8, gap: 10 }}
+        contentContainerStyle={{ padding: 18, paddingTop: 8, paddingBottom: 30, gap: 10 }}
         ListEmptyComponent={<Text style={{ fontFamily: F.regular, color: C.muted }}>{q.trim().length < 2 ? 'Tapez au moins 2 lettres ou 3 chiffres.' : 'Aucun résultat. Vérifiez l’orthographe ou le numéro.'}</Text>}
         renderItem={({ item: r }) => {
           const blocked = r.status !== 'confirmed';
           return (
-            <Card style={{ padding: 14, gap: 8 }}>
+            <Card style={{ padding: 14, gap: 10 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.text }}>{r.name}</Text>
@@ -59,14 +61,49 @@ export default function SearchScreen({ rows, onScan }) {
                   <Text style={{ fontFamily: F.medium, fontSize: 13, color: r.entered ? C.muted : blocked ? '#B45309' : C.brandDark }}>{r.entered ? 'Déjà entré' : blocked ? 'Paiement en attente' : 'Peut entrer'}</Text>
                 </View>
               </View>
-              <Pressable disabled={busyId === r.id} onPress={() => enter(r)} style={{ height: 46, borderRadius: 12, backgroundColor: C.brand, alignItems: 'center', justifyContent: 'center', opacity: busyId === r.id ? 0.6 : 1 }}>
-                <Text style={{ fontFamily: F.medium, color: '#fff', fontSize: 16 }}>Valider l’entrée</Text>
-              </Pressable>
+
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Pressable
+                  onPress={() => setSelectedPass(r)}
+                  style={{
+                    flex: 1,
+                    height: 46,
+                    borderRadius: 12,
+                    backgroundColor: '#fff',
+                    borderWidth: 1,
+                    borderColor: C.brand,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Feather name="eye" size={16} color={C.brandDark} />
+                  <Text style={{ fontFamily: F.medium, color: C.brandDark, fontSize: 14 }}>Consulter / Renvoyer</Text>
+                </Pressable>
+
+                <Pressable
+                  disabled={busyId === r.id}
+                  onPress={() => enter(r)}
+                  style={{
+                    flex: 1,
+                    height: 46,
+                    borderRadius: 12,
+                    backgroundColor: C.brand,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: busyId === r.id ? 0.6 : 1,
+                  }}
+                >
+                  <Text style={{ fontFamily: F.medium, color: '#fff', fontSize: 15 }}>Valider l’entrée</Text>
+                </Pressable>
+              </View>
             </Card>
           );
         }}
       />
       {res && <Result res={res} onClose={() => setRes(null)} />}
+      <PassModal visible={!!selectedPass} record={selectedPass} onClose={() => setSelectedPass(null)} />
     </View>
   );
 }

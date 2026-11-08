@@ -1,5 +1,16 @@
 export const KEYWORD = "pleroma aletheia";
-export const WEB_URL = "https://kainos.example.com";
+export const DEFAULT_WEB_URL = "https://kainos.vercel.app";
+let _customWebUrl = "";
+const isUsableWebUrl = (url) => {
+  const clean = String(url || '').trim();
+  return /^https?:\/\/[^\s/]+(?:\/[^\s]*)?$/i.test(clean) && !/example\.com|localhost|127\.0\.0\.1/i.test(clean);
+};
+export const setCustomWebUrl = (url) => {
+  const clean = String(url || "").trim().replace(/\/+$/, "");
+  _customWebUrl = isUsableWebUrl(clean) ? clean : "";
+};
+export const getWebUrl = () => _customWebUrl || DEFAULT_WEB_URL;
+export const WEB_URL = DEFAULT_WEB_URL;
 export const DEVICES = [
   "Porte A - Agent 1",
   "Porte A - Agent 2",

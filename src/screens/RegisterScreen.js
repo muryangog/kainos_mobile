@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, RefreshControl, ScrollView, Share, Switch, Text, TextInput, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
-import { C, F, KEYWORD, PAYMENT_METHOD_GROUPS, WEB_URL, money } from '../config';
+import { C, F, KEYWORD, PAYMENT_METHOD_GROUPS, getWebUrl, money } from '../config';
 import { Btn, Card, Title } from '../ui';
 import { supabase } from '../supabase';
 
@@ -56,6 +56,7 @@ export default function RegisterScreen({ rows = [], device, onRegister, onRefres
   const [agentId, setAgentId] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -173,9 +174,13 @@ export default function RegisterScreen({ rows = [], device, onRegister, onRefres
   const sharePass = async () => {
     if (!receipt || !receipt.id) return;
     const tokenPart = receipt.passToken ? `&t=${encodeURIComponent(receipt.passToken)}` : '';
-    const url = `${WEB_URL}/pass?id=${encodeURIComponent(receipt.id)}${tokenPart}`;
+    const url = `${getWebUrl()}/pass?id=${encodeURIComponent(receipt.id)}${tokenPart}`;
     try {
-      await Share.share({ message: url, url });
+      await Share.share({
+        title: `Pass Kainos - ${receipt.name || receipt.id}`,
+        message: `Pass d'accès Kainos pour ${receipt.name || receipt.id} :\n${url}`,
+        url,
+      });
     } catch (e) {
       // Annulation du partage ignorée
     }
@@ -276,8 +281,12 @@ export default function RegisterScreen({ rows = [], device, onRegister, onRefres
       </View>
 
       {view === 'new' ? (
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 28, gap: 14 }} keyboardShouldPersistTaps="handled">
-          <Title>Nouveau</Title>
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 160, gap: 14 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Title>Nouveau</Title>
 
           {/* Type de pass : VIP / Public */}
           <View style={{ flexDirection: 'row', gap: 10 }}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, Text, TextInput, Vibration, View, StyleSheet } from 'react-native';
+import { Animated, Pressable, ScrollView, Text, TextInput, Vibration, View, StyleSheet, useWindowDimensions } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Feather } from '@expo/vector-icons';
 import { C, F, KEYWORD, money } from '../config';
@@ -53,6 +53,9 @@ export default function ScanScreen({ onScan, session, online, queue }) {
   const [manual, setManual] = useState('');
   const [torch, setTorch] = useState(false);
   const lock = useRef(false);
+  const { width, height } = useWindowDimensions();
+  const landscape = width > height;
+  const camHeight = landscape ? Math.max(200, height - 40) : Math.min(340, Math.round(height * 0.42));
 
   const handle = async (code) => {
     if (lock.current || !code) return;
@@ -63,45 +66,67 @@ export default function ScanScreen({ onScan, session, online, queue }) {
   };
   const close = () => { setRes(null); setTimeout(() => { lock.current = false; }, 500); };
 
+  const header = (
+    <View style={{ paddingHorizontal: 18, paddingTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: 22, color: C.text }}>Scanner</Text>
+        <Text numberOfLines={1} style={{ fontFamily: F.regular, color: C.muted }}>{session.device} - {session.agent}</Text>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 34, borderRadius: 17, backgroundColor: online ? C.soft : '#FEF3C7' }}>
+        <Feather name={online ? 'wifi' : 'wifi-off'} size={16} color={online ? C.brandDark : '#B45309'} />
+        <Text style={{ fontFamily: F.medium, color: online ? C.brandDark : '#B45309' }}>{online ? 'En ligne' : `Hors ligne${queue ? ` (${queue})` : ''}`}</Text>
+      </View>
+    </View>
+  );
+
+  const camera = (
+    <View style={[{ height: camHeight, borderRadius: 22, overflow: 'hidden', backgroundColor: '#0F172A' }, landscape ? { flex: 1, margin: 14 } : { margin: 18 }]}>
+      {perm?.granted ? (
+        <CameraView style={{ flex: 1 }} facing="back" enableTorch={torch} barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+          onBarcodeScanned={res ? undefined : ({ data }) => handle(String(data).trim().toUpperCase())} />
+      ) : (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20, gap: 12 }}>
+          <Feather name="camera-off" size={40} color="#94A3B8" />
+          <Text style={{ fontFamily: F.medium, color: '#E2E8F0', textAlign: 'center' }}>L'accès à la caméra est nécessaire pour scanner les badges.</Text>
+          <Btn label="Autoriser la caméra" onPress={ask} />
+        </View>
+      )}
+      {perm?.granted && (
+        <>
+          <View pointerEvents="none" style={{ position: 'absolute', top: '15%', bottom: '15%', left: '20%', right: '20%', borderWidth: 3, borderColor: '#fff', borderRadius: 20, opacity: 0.8 }} />
+          <Pressable onPress={() => setTorch(!torch)} style={{ position: 'absolute', right: 12, bottom: 12, width: 46, height: 46, borderRadius: 23, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }}>
+            <Feather name="zap" size={22} color={torch ? '#FCD34D' : '#fff'} />
+          </Pressable>
+        </>
+      )}
+    </View>
+  );
+
+  const manualEntry = (
+    <View style={{ paddingHorizontal: 18, paddingBottom: 18, flexDirection: 'row', gap: 10 }}>
+      <TextInput value={manual} onChangeText={setManual} placeholder="Code manuel (ex : KN-0001)" autoCapitalize="characters"
+        style={{ flex: 1, height: 50, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: C.border, paddingHorizontal: 14, fontFamily: F.regular, fontSize: 16 }} />
+      <Btn label="Valider" onPress={() => handle(manual.trim().toUpperCase())} disabled={!manual.trim()} />
+    </View>
+  );
+
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ paddingHorizontal: 18, paddingTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View>
-          <Text style={{ fontFamily: F.bold, fontSize: 22, color: C.text }}>Scanner</Text>
-          <Text style={{ fontFamily: F.regular, color: C.muted }}>{session.device} - {session.agent}</Text>
+      {landscape ? (
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+          <View style={{ flex: 1 }}>{camera}</View>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 10, gap: 12 }} keyboardShouldPersistTaps="handled">
+            {header}
+            {manualEntry}
+          </ScrollView>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 34, borderRadius: 17, backgroundColor: online ? C.soft : '#FEF3C7' }}>
-          <Feather name={online ? 'wifi' : 'wifi-off'} size={16} color={online ? C.brandDark : '#B45309'} />
-          <Text style={{ fontFamily: F.medium, color: online ? C.brandDark : '#B45309' }}>{online ? 'En ligne' : `Hors ligne${queue ? ` (${queue})` : ''}`}</Text>
-        </View>
-      </View>
-
-      <View style={{ margin: 18, height: 340, borderRadius: 22, overflow: 'hidden', backgroundColor: '#0F172A' }}>
-        {perm?.granted ? (
-          <CameraView style={{ flex: 1 }} facing="back" enableTorch={torch} barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-            onBarcodeScanned={res ? undefined : ({ data }) => handle(String(data).trim().toUpperCase())} />
-        ) : (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20, gap: 12 }}>
-            <Feather name="camera-off" size={40} color="#94A3B8" />
-            <Text style={{ fontFamily: F.medium, color: '#E2E8F0', textAlign: 'center' }}>L'accès à la caméra est nécessaire pour scanner les badges.</Text>
-            <Btn label="Autoriser la caméra" onPress={ask} />
-          </View>
-        )}
-        {perm?.granted && (
-          <>
-            <View pointerEvents="none" style={{ position: 'absolute', top: 50, bottom: 50, left: 50, right: 50, borderWidth: 3, borderColor: '#fff', borderRadius: 20, opacity: 0.8 }} />
-            <Pressable onPress={() => setTorch(!torch)} style={{ position: 'absolute', right: 12, bottom: 12, width: 46, height: 46, borderRadius: 23, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }}>
-              <Feather name="zap" size={22} color={torch ? '#FCD34D' : '#fff'} />
-            </Pressable>
-          </>
-        )}
-      </View>
-
-      <View style={{ paddingHorizontal: 18, flexDirection: 'row', gap: 10 }}>
-        <TextInput value={manual} onChangeText={setManual} placeholder="Code manuel (ex : KN-0001)" autoCapitalize="characters"
-          style={{ flex: 1, height: 50, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: C.border, paddingHorizontal: 14, fontFamily: F.regular, fontSize: 16 }} />
-        <Btn label="Valider" onPress={() => handle(manual.trim().toUpperCase())} disabled={!manual.trim()} />
-      </View>
+      ) : (
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+          {header}
+          {camera}
+          {manualEntry}
+        </ScrollView>
+      )}
       {res && <Result res={res} onClose={close} />}
     </View>
   );
